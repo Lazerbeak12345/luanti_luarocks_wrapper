@@ -19,3 +19,8 @@ This mod allows you to "wrap" a LuaRocks package as a Luanti mod.
 There are certian things not available from within the Luanti mod sandbox. It is not possible to provide a subset of these things, and if the LuaRocks package you need requires that, this Luanti mod can't help you.
 
 Should I release the CLI tooling, I will have a partial solution, but you would still need the user to mark your mod as trusted.
+
+A few examples, as I find them:
+
+- Rocks with external dependencies
+- Rocks that require compilation/are not written in 100% lua

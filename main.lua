@@ -234,8 +234,7 @@ m.ENV_mt = {}
 m.ENV_mt.__index = {
 	require = m.require,
 	package = package_,
-	table = {},
-	string = {},
+	arg = {}, -- no command line arguments! :)
 }
 
 m.ENV_extra_mts = {}
@@ -246,8 +245,8 @@ for global_key, global_subkey_list in pairs{
 		"remove",
 		"sort",
 		"concat",
-		--"unpack",
-		--"pack",
+		--"unpack", -- not in luanti
+		--"pack", -- not in luanti
 		"insert",
 		"move",
 	},
@@ -259,11 +258,11 @@ for global_key, global_subkey_list in pairs{
 		"reverse",
 		"gmatch",
 		"format",
-		--"packsize",
+		--"packsize", -- not in luanti
 		"find",
 		"rep",
-		--"unpack",
-		--"pack",
+		--"unpack", -- not in luanti
+		--"pack", -- not in luanti
 		"dump",
 		"upper",
 		"gsub",
@@ -288,19 +287,19 @@ for global_key, global_subkey_list in pairs{
 		"random",
 		"tan",
 		"exp",
-		--"ult",
+		--"ult", -- not in luanti
 		"log",
 		"cos",
 		"deg",
-		--"tointeger",
+		--"tointeger", -- not in luanti
 		"sinh",
 		"asin",
 		"acos",
 		"pow",
 		"tanh",
-		--"mininteger",
-		--"type",
-		--"maxinteger",
+		--"mininteger", -- not in luanti
+		--"type", -- not in luanti
+		--"maxinteger", -- not in luanti
 		"huge",
 		"fmod",
 		"floor",
@@ -310,15 +309,47 @@ for global_key, global_subkey_list in pairs{
 	os = {
 		"getenv",
 		"time",
-		--"execute",
+		--"execute", -- not in luanti
 		"difftime",
 		"remove",
 		"rename",
 		"clock",
-		--"tmpname",
+		--"tmpname", -- not in luanti
 		"setlocale",
-		--"exit",
+		--"exit", -- not in luanti
 		"date",
+	},
+	--[[utf8 = { -- not in luanti
+		"char",
+		"charpattern",
+		"codes",
+		"codepoint",
+		"len",
+		"offset"
+	}]]
+	-- will not do debug - debug is insecure
+	coroutine = {
+		--"close", -- not in luanti
+		"create",
+		"isyieldable",
+		"resume",
+		"running",
+		"status",
+		"wrap",
+		"yield",
+	},
+	io = {
+		"close",
+		"flush",
+		"input",
+		"lines",
+		"open",
+		"output",
+		--"popen", -- not in luanti
+		"read",
+		--"tmpfile", -- not in luanti
+		"type",
+		"write",
 	},
 } do
 	local obj = {}
@@ -362,6 +393,8 @@ end
 for _, key in ipairs{
 	"rawget",
 	"rawset",
+	"rawequal",
+	"rawlen",
 	"setmetatable",
 	"getmetatable",
 
@@ -373,6 +406,7 @@ for _, key in ipairs{
 	"select",
 
 	"pcall",
+	"xpcall",
 	"assert",
 	"error",
 	"warn",
@@ -383,21 +417,13 @@ for _, key in ipairs{
 	"tostring",
 	"tonumber",
 
+	"load",
+	"loadfile",
+	"dofile",
+
+	"collectgarbage",
+
 	"_VERSION",
---"load",
---"utf8",
---"assert",
---"rawequal",
---"package",
---"loadfile",
---"collectgarbage",
---"arg",
---"debug",
---"rawlen",
---"xpcall",
---"dofile",
---"coroutine",
---"io",
 } do
 	m.ENV_mt.__index[key] = _G[key]
 end

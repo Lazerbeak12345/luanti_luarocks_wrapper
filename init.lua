@@ -22,9 +22,11 @@ if true then
 			return t
 		end
 	})
+	--[[
 	luarocks_wrapper.register_rock("fun", "0.1.3-1", {
 		rock_path="fun-0.1.3-1/luafun",
 	})
+	--]]
 
 	local fun = luarocks_wrapper.require"fun"
 	logger:error(fun)
