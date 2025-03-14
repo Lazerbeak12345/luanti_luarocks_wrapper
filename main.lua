@@ -370,7 +370,34 @@ for global_key, global_subkey_list in pairs{
 		"len",
 		"offset"
 	}]]
-	-- will not do debug - debug is insecure
+	debug = {
+		"debug",
+
+		--"getmetatable", -- not in luanti
+		--"setmetatable", -- not in luanti
+
+		"sethook",
+		"gethook",
+
+		--"getlocal", -- not in luanti
+		--"setlocal", -- not in luanti
+
+		--"getuservalue", -- not in luanti
+		--"setuservalue", -- not in luanti
+
+		"traceback",
+
+		--"setcstacklimit", -- unclear docs, deprecated, not in luanti
+
+		--"getupvalue", -- not in luanti
+		--"setupvalue", -- not in luanti
+		"upvalueid",
+		--"upvaluejoin", -- not in luanti
+
+		--"getregistry", -- not in luanti
+
+		"getinfo",
+	},
 	coroutine = {
 		--"close", -- not in luanti
 		"create",
