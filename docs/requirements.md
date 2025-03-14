@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 Lazerbeak12345 on Github and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Development Requirements for Luanti LuaRocks Wrapper
 
 > The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL

@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2025 Lazerbeak12345 on Github and contributors
+--
+-- SPDX-License-Identifier: MIT
+
 local logging, modlib, core, luarocks_wrapper, dump
 	= logging, modlib, core, luarocks_wrapper, dump
 

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 Lazerbeak12345 on Github and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Luanti Luarocks Wrapper
 
 Do you want to depend on a luarock?
