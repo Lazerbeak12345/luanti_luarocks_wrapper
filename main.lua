@@ -4,40 +4,57 @@ local logging, modlib, core, luarocks_wrapper, dump
 local file = modlib.file
 local logger = logging.logger()
 
-logger:action" starting..."
+logger:action"starting..."
 
 local m = luarocks_wrapper
 
 local rocks = {}
 
+local function ver_sion(version)
+	local ver = version:gsub("-.*", "")
+	local sion = version:sub(2 + #ver)
+	return ver, sion
+end
+
 local register_rock_logger = logger:sublogger"register_rock"
 function m.register_rock(name, version, options)
 	local sublogger = register_rock_logger
-	sublogger:debug(name)
-	sublogger:debug(version)
+	sublogger:action(("%s-%s"):format(name, version))
 
 	if not options then options = {} end
 
-	local ver = version:gsub("-%d*", "")
+	local ver, sion = ver_sion(version)
 
 	local c_modname = core.get_current_modname()
 	local c_modpath = core.get_modpath(c_modname)
-	sublogger:debug(c_modname)
-	sublogger:debug(c_modpath)
 
 	local name_and_version = name .. "-" .. version
 	local name_and_ver = name .. "-" .. ver
+
+	local scm_path_options
+	if options.scm then
+		scm_path_options = {
+			("%s-scm"):format(name),
+			("%s-scm-%s"):format(name, sion)
+		}
+	end
 
 	local rock_path
 	if not options.rock_path then
 		local path_pattern = "%s/rock/%s/%s"
 		-- HACK: I don't actually understand the pattern here,
 		--       so here's my guess.
-		for _, package_comp in ipairs{
+		local path_options = {
 			name,
 			name_and_ver,
-			name_and_version
-		} do
+			name_and_version,
+		}
+		if options.scm then
+			for _, value in ipairs(scm_path_options) do
+				path_options[#path_options+1] = value
+			end
+		end
+		for _, package_comp in ipairs(path_options) do
 			local path = path_pattern:format(
 				c_modpath,
 				name_and_version,
@@ -58,13 +75,28 @@ function m.register_rock(name, version, options)
 		type(rock_path) == "string",
 		"could not find path of rock"
 	)
-	local rockspec_path = ("%s/%s.rockspec"):format(
-		rock_path,
-		name_and_version
+	local rockspec_path
+	do
+		local path_pattern = "%s/%s.rockspec"
+		local path_options = { name_and_version }
+		if options.scm then
+			for _, value in ipairs(scm_path_options) do
+				path_options[#path_options+1] = value
+			end
+		end
+		for _, rockspec_name in ipairs(path_options) do
+			rockspec_path = path_pattern:format(
+				rock_path,
+				rockspec_name
+			)
+		end
+	end
+	sublogger:assert(
+		file.exists(rockspec_path),
+		"could not find path of rockspec"
 	)
-	sublogger:assert(file.exists(rockspec_path))
 
-	sublogger:debug(rockspec_path)
+	sublogger:verbose(rockspec_path)
 
 	local read = sublogger:assert(loadfile(rockspec_path))
 	local rockspec = {}
@@ -88,6 +120,9 @@ local mt_mods_that_registered_rocks = {}
 local register_fake_rock_logger = logger:sublogger"register_fake_rock"
 function m.register_fake_rock(name, version, options)
 	local sublogger = register_fake_rock_logger
+	sublogger:action(("%s-%s"):format(name, version))
+
+	local _, sion = ver_sion(version)
 
 	local c_modname = core.get_current_modname()
 	do
@@ -123,8 +158,12 @@ function m.register_fake_rock(name, version, options)
 		):format(rockspec.rockspec_format)
 	)
 	sublogger:assert(
-		rockspec.version == version,
-		"rockspec package version did not match"
+		rockspec.version == version or
+		(options.scm and (
+			rockspec.version == "scm" or
+			rockspec.version == ("scm-%s"):format(sion)
+		)),
+		("rockspec package version did not match %s ~= %s"):format(rockspec.version, version)
 	)
 	sublogger:assert(
 		rockspec.external_dependencies == nil,
