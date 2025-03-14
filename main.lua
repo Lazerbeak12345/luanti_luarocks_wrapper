@@ -394,7 +394,7 @@ for _, key in ipairs{
 	"rawget",
 	"rawset",
 	"rawequal",
-	"rawlen",
+	-- "rawlen", -- not in luanti
 	"setmetatable",
 	"getmetatable",
 
@@ -409,7 +409,7 @@ for _, key in ipairs{
 	"xpcall",
 	"assert",
 	"error",
-	"warn",
+	-- "warn", -- not in luanti
 	"print",
 
 	"type",
@@ -425,6 +425,19 @@ for _, key in ipairs{
 
 	"_VERSION",
 } do
-	m.ENV_mt.__index[key] = _G[key]
+	local value = _G[key]
+	local t = type(value)
+	local allowed = {
+		["function"] = true,
+		string = true,
+	}
+	logger:assert(
+		allowed[t],
+		("%s was type %s"):format(
+			key,
+			t
+		)
+	)
+	m.ENV_mt.__index[key] = value
 end
 
