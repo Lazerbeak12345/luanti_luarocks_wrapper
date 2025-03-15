@@ -10,8 +10,9 @@ local logger = logging.logger()
 
 logger:action"starting..."
 
-local m = luarocks_wrapper
+local M = {}
 
+-- WARN: DO NOT allow these to be exposed.
 local rocks = {}
 
 local function ver_sion(version)
@@ -21,7 +22,7 @@ local function ver_sion(version)
 end
 
 local register_rock_logger = logger:sublogger"register_rock"
-function m.register_rock(name, version, options)
+function M.register_rock(name, version, options)
 	local sublogger = register_rock_logger
 	sublogger:action(("%s-%s"):format(name, version))
 
@@ -114,15 +115,15 @@ function m.register_rock(name, version, options)
 	options.rock_path = rock_path
 	options.rockspec = rockspec
 	if not options.ENV then
-		options.ENV = setmetatable({}, m.ENV_mt)
+		options.ENV = setmetatable({}, M.ENV_mt)
 	end
-	m.register_fake_rock(name, version, options)
+	M.register_fake_rock(name, version, options)
 end
 
 local mt_mods_that_registered_rocks = {}
 
 local register_fake_rock_logger = logger:sublogger"register_fake_rock"
-function m.register_fake_rock(name, version, options)
+function M.register_fake_rock(name, version, options)
 	local sublogger = register_fake_rock_logger
 	sublogger:action(("%s-%s"):format(name, version))
 
@@ -148,6 +149,24 @@ function m.register_fake_rock(name, version, options)
 			rock = name,
 			mod = c_modname,
 		}
+	end
+
+	if options.insecure_require then
+		sublogger:assert(
+			type(options.transform) == "function",
+			"If insecure mode is used, you MUST provide a transformer. To quote the luanti docs, "..
+			"DO NOT ALLOW ANY OTHER MODS TO ACCESS THE RETURNED ENVIRONMENT, STORE IT IN A LOCAL VARIABLE!"
+		)
+		local fake_require = options.ENV.require
+		rawset(options.ENV, "require", function (...)
+			local success, fake_rock = pcall(fake_require, ...)
+			if success then return fake_rock end
+			return options.transform(
+				options.insecure_require(...)
+			)
+		end)
+		options.insecure_require = nil -- keep it as an indirect reference for as long as possible.
+		options.transform = nil -- Don't transform it later
 	end
 
 	local rockspec = options.rockspec
@@ -236,7 +255,7 @@ local package_ = {
 
 local req
 local require_logger = logger:sublogger"require"
-function m.require(path)
+function M.require(path)
 	if package_.loaded[path] then return package_.loaded[path] end
 	rawset(package_.loaded, path, req(path))
 	return package_.loaded[path]
@@ -273,15 +292,15 @@ function req(path)
 	return result
 end
 
-m.ENV_mt = {}
-m.ENV_mt.__index = {
-	require = m.require,
+M.ENV_mt = {}
+M.ENV_mt.__index = {
+	require = M.require,
 	package = package_,
 	arg = {}, -- no command line arguments! :)
 }
 
-m.ENV_extra_mts = {}
-m.ENV_extra_loggers = {}
+M.ENV_extra_mts = {}
+M.ENV_extra_loggers = {}
 
 for global_key, global_subkey_list in pairs{
 	table = {
@@ -423,15 +442,15 @@ for global_key, global_subkey_list in pairs{
 	},
 } do
 	local obj = {}
-	m.ENV_mt.__index[global_key] = obj
+	M.ENV_mt.__index[global_key] = obj
 
 	local g_obj = _G[global_key]
 
 	local sublogger = logger:sublogger("extras." .. global_key)
-	m.ENV_extra_loggers[global_key] = sublogger
+	M.ENV_extra_loggers[global_key] = sublogger
 
 	local mt = {}
-	m.ENV_extra_mts[global_key] = mt
+	M.ENV_extra_mts[global_key] = mt
 
 	function mt.__newindex()
 		sublogger:raise((
@@ -508,6 +527,21 @@ for _, key in ipairs{
 			t
 		)
 	)
-	m.ENV_mt.__index[key] = value
+	M.ENV_mt.__index[key] = value
 end
+
+local m_mt = {}
+m_mt.__metatable = "Don't modify the metatable with getmetatable either, smartypants"
+function m_mt.__newindex()
+	logger:raise[[n
+
+		Since this mod may handle insecure environment functions, you MUST NOT override functions in this library.
+
+		Should you find it possible, I consider it a serious security problem.
+	]]
+end
+function m_mt.__index(_, key)
+	return M[key]
+end
+setmetatable(luarocks_wrapper, m_mt)
 
